@@ -11,7 +11,7 @@ import java.net.URL;
  */
 public class HttpUtil {
     public static void sendHttpRequest(final String adress,
-                                       final HttpCallbackListener listener){
+                                       final HttpCallbackListener listener, final String type){
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -22,7 +22,14 @@ public class HttpUtil {
                     connection.setRequestMethod("GET");
                     connection.setConnectTimeout(8000);
                     connection.setReadTimeout(8000);
-                    connection.setRequestProperty("apikey","c17bd454d300638604949ec2332e1897");
+                    switch (type){
+                        case "address":
+                            connection.setRequestProperty("apikey","c17bd454d300638604949ec2332e1897");
+                            break;
+                        case "weather":
+                            break;
+                    }
+
                     InputStream in = connection.getInputStream();
                     BufferedReader reader = new BufferedReader(new InputStreamReader(in));
                     StringBuilder response = new StringBuilder();
