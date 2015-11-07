@@ -20,7 +20,7 @@ public class Utility {
             response = response.substring(2,response.length()-2);
             String[] allProvince = null;
             if(response.contains("[")){
-                allProvince = response.split("\\[\\,\\]");
+                allProvince = response.split("\\],\\[");
             }else {
                 allProvince = new String[]{response};
             }
@@ -29,8 +29,7 @@ public class Utility {
                     String[] array = p.replace("\"","").split(",");
                     Province province = new Province();
                     province.setProvinceName(decodeUnicode(array[0]));
-                    province.setProvinceCode(array[2]);
-
+                    province.setProvinceCode(array[1]);
                     cocoWeatherDB.saveProvince(province);
                 }
                 return  true;
@@ -42,13 +41,13 @@ public class Utility {
     /**
      * 解析和处理市级数据
      */
-    public synchronized static boolean handleCitiesResponse(CocoWeatherDB
+    public  static boolean handleCitiesResponse(CocoWeatherDB
                                                                        cocoWeatherDB,String response,int provinceId){
         if(!TextUtils.isEmpty(response)){
             response = response.substring(2,response.length()-2);
             String[] allCities = null;
             if(response.contains("[")){
-                allCities = response.split("\\[\\,\\]");
+                allCities = response.split("\\]\\,\\[");
             }else {
                 allCities = new String[]{response};
             }
@@ -57,7 +56,7 @@ public class Utility {
                     String[] array = p.replace("\"","").split(",");
                     City city = new City();
                     city.setCityName(decodeUnicode(array[0]));
-                    city.setCityCode(array[2]);
+                    city.setCityCode(array[1]);
                     city.setProvinceId(provinceId);
                     cocoWeatherDB.saveCity(city);
                 }
@@ -69,13 +68,13 @@ public class Utility {
     /**
      * 解析和处理所有县级数据
      */
-    public synchronized static boolean handleCountiesResponse(CocoWeatherDB
+    public  static boolean handleCountiesResponse(CocoWeatherDB
                                                                     cocoWeatherDB,String response,int cityId){
         if(!TextUtils.isEmpty(response)){
             response = response.substring(2,response.length()-2);
             String[] allCounties = null;
             if(response.contains("[")){
-                allCounties = response.split("\\[\\,\\]");
+                allCounties = response.split("\\]\\,\\[");
             }else {
                 allCounties = new String[]{response};
             }
@@ -84,7 +83,8 @@ public class Utility {
                     String[] array = p.replace("\"","").split(",");
                     County county = new County();
                     county.setCountyName(decodeUnicode(array[0]));
-                    county.setCountyCode(array[2]);
+                    county.setCountyCode(array[1]);
+
                     county.setCityId(cityId);
                     cocoWeatherDB.saveCounty(county);
                 }
