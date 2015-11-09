@@ -109,14 +109,18 @@ public class Utility {
     public static void handleWeatherResponse(Context context,String response){
         try {
             JSONObject jsonObject = new JSONObject(response);
-            JSONObject weatherInfo = jsonObject.getJSONObject("weatherinfo");
+            JSONObject weatherInfo = jsonObject.getJSONObject("retData");
             String cityName = weatherInfo.getString("city");
-            String weatherCode = weatherInfo.getString("cityid");
-            String temp1 = weatherInfo.getString("temp1");
-            String temp2 = weatherInfo.getString("temp2");
+            String weatherCode = weatherInfo.getString("citycode");
+            String temp1 = weatherInfo.getString("l_tmp");
+            String temp2 = weatherInfo.getString("temp");
             String weatherDesp = weatherInfo.getString("weather");
-            String publishTimme = weatherInfo.getString("ptime");
-            saveWeatherInfo(context,cityName,weatherCode,temp1,temp2,weatherDesp,publishTimme);
+            String publishTimme = weatherInfo.getString("time");
+            String windDirection = weatherInfo.getString("WD");
+            String windStrence = weatherInfo.getString("WS");
+            String sunRise = weatherInfo.getString("sunrise");
+            String sunSet = weatherInfo.getString("sunset");
+            saveWeatherInfo(context,cityName,weatherCode,temp1,temp2,weatherDesp,publishTimme,windDirection,windStrence,sunRise,sunRise);
 
         }catch (Exception e){
             e.printStackTrace();
@@ -133,7 +137,7 @@ public class Utility {
      * @param weatherDesp
      * @param publishTimme
      */
-    private static void saveWeatherInfo(Context context, String cityName, String weatherCode, String temp1, String temp2, String weatherDesp, String publishTimme) {
+    private static void saveWeatherInfo(Context context, String cityName, String weatherCode, String temp1, String temp2, String weatherDesp, String publishTimme,String windDirection,String windStrence,String sunRise,String sunSet) {
         SimpleDateFormat sdf = new SimpleDateFormat("yyy年M月d日", Locale.CHINA);
         SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(context).edit();
         editor.putBoolean("city_selected",true);
@@ -144,6 +148,10 @@ public class Utility {
         editor.putString("weather_desp", weatherDesp);
         editor.putString("publish_time", publishTimme);
         editor.putString("current_date",sdf.format(new Date()));
+        editor.putString("wind_direction",windDirection);
+        editor.putString("wind_strence",windStrence);
+        editor.putString("sun_rise",sunRise);
+        editor.putString("sun_set",sunSet);
         editor.commit();
     }
 

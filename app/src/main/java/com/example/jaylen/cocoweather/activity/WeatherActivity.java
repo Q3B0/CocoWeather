@@ -129,8 +129,8 @@ public class WeatherActivity extends Activity {
      * 查询天气代号所对应的天气。
      */
     private void queryWeatherInfo(String weatherCode) {
-        String address = "http://www.weather.com.cn/data/cityinfo/" +
-                weatherCode + ".html";
+        String address = "http://apis.baidu.com/apistore/weatherservice/cityname？cityid=" +
+                weatherCode;
         queryFromServer(address, "weatherCode");
     }
     /**
