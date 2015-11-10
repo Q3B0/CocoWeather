@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.View;
@@ -28,44 +27,37 @@ public class WeatherActivity extends Activity {
     private TextView cityNameText;
 
     /**
-     * 用于显示发布时间
-     * @param savedInstanceState
+     * 用于显示发布时间savedInstanceState
      */
     private TextView publishText;
 
     /**
-     * 用于显示是天气描述信息
-     * @param savedInstanceState
+     * 用于显示是天气描述信息edInstanceState
      */
     private TextView weatherDespText;
 
     /**
-     * Disp Temp1
-     * @param savedInstanceState
+     * Disp Temp1vedInstanceState
      */
     private TextView temp1Text;
 
     /**
      * Disp Temp2
-     * @param savedInstanceState
      */
     private TextView temp2Text;
 
     /**
      * Disp Current Date
-     * @param savedInstanceState
      */
     private TextView currentDateText;
 
     /**
      * Switch City
-     * @param savedInstanceState
      */
     private Button switchCity;
 
     /**
      * Updata Weather Info
-     * @param savedInstanceState
      */
     private  Button refreshWeather;
     @Override
@@ -119,7 +111,7 @@ public class WeatherActivity extends Activity {
 
     /**
      * 查询县级代号对应的天气代号
-     * @param countyCode
+     * @param countyCode 当前城市代码
      */
     private void queryWeatherCode(String countyCode) {
         String address = "http://www.weather.com.cn/data/list3/city" +
