@@ -103,21 +103,12 @@ public class WeatherActivity extends Activity {
                 SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(WeatherActivity.this);
                 String weatherCode = prefs.getString("weather_code","");
                 if (!TextUtils.isEmpty(weatherCode)){
-                    queryWeatherCode(weatherCode);
+                    queryWeatherInfo(weatherCode);
                 }
             }
         });
     }
 
-    /**
-     * 查询县级代号对应的天气代号
-     * @param countyCode 当前城市代码
-     */
-    private void queryWeatherCode(String countyCode) {
-        String address = "http://www.weather.com.cn/data/list3/city" +
-                countyCode + ".xml";
-        queryFromServer(address, "countyCode");
-    }
     /**
      * 查询天气代号所对应的天气。
      */
