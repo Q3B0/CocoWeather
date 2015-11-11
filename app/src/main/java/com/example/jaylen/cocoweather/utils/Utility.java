@@ -30,7 +30,9 @@ public class Utility {
             String[] allProvince = null;
             if(response.contains("[")){
                 allProvince = response.split("\\],\\[");
-            }else {
+            }else if(!response.contains("\\u")){
+                return false;
+            } else {
                 allProvince = new String[]{response};
             }
             if(allProvince != null && allProvince.length>0){

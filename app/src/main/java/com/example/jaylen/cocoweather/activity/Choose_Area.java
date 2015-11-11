@@ -119,29 +119,13 @@ public class Choose_Area extends Activity {
         builder.setPositiveButton("确认", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                mLocationClient = new LocationClient(getApplicationContext());
-                mMyLocationListener = new MyLocationListener();
-                LocationClientOption option = new LocationClientOption();
-                option.setLocationMode(LocationClientOption.LocationMode.Hight_Accuracy);//可选，默认高精度，设置定位模式，高精度，低功耗，仅设备
-                option.setCoorType("gcj02");//可选，默认gcj02，设置返回的定位结果坐标系，
-                int span=1000;
-                option.setScanSpan(span);//可选，默认0，即仅定位一次，设置发起定位请求的间隔需要大于等于1000ms才是有效的
-                option.setIsNeedAddress(true);//可选，设置是否需要地址信息，默认不需要
-                option.setOpenGps(true);//可选，默认false,设置是否使用gps
-                option.setLocationNotify(true);//可选，默认false，设置是否当gps有效时按照1S1次频率输出GPS结果
-                option.setIgnoreKillProcess(true);//可选，默认true，定位SDK内部是一个SERVICE，并放到了独立进程，设置是否在stop的时候杀死这个进程，默认不杀死
-                option.setEnableSimulateGps(false);//可选，默认false，设置是否需要过滤gps仿真结果，默认需要
-                option.setIsNeedLocationDescribe(true);//可选，默认false，设置是否需要位置语义化结果，可以在BDLocation.getLocationDescribe里得到，结果类似于“在北京天安门附近”
-                option.setIsNeedLocationPoiList(true);//可选，默认false，设置是否需要POI结果，可以在BDLocation.getPoiList里得到
-                mLocationClient.setLocOption(option);
-                mLocationClient.registerLocationListener(mMyLocationListener);
-                mLocationClient.start();
+                initLocation();
             }
         });
         builder.setNegativeButton("取消", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                if(mLocationClient != null && mLocationClient.isStarted()){
+                if (mLocationClient != null && mLocationClient.isStarted()) {
                     mLocationClient.unRegisterLocationListener(mMyLocationListener);
                     mLocationClient.stop();
                 }
@@ -175,6 +159,25 @@ public class Choose_Area extends Activity {
         dialog =  builder.show();
     }
 
+    private void initLocation(){
+        mLocationClient = new LocationClient(getApplicationContext());
+        mMyLocationListener = new MyLocationListener();
+        LocationClientOption option = new LocationClientOption();
+        option.setLocationMode(LocationClientOption.LocationMode.Hight_Accuracy);//可选，默认高精度，设置定位模式，高精度，低功耗，仅设备
+        option.setCoorType("gcj02");//可选，默认gcj02，设置返回的定位结果坐标系，
+        int span=1000;
+        option.setScanSpan(span);//可选，默认0，即仅定位一次，设置发起定位请求的间隔需要大于等于1000ms才是有效的
+        option.setIsNeedAddress(true);//可选，设置是否需要地址信息，默认不需要
+        option.setOpenGps(true);//可选，默认false,设置是否使用gps
+        option.setLocationNotify(true);//可选，默认false，设置是否当gps有效时按照1S1次频率输出GPS结果
+        option.setIgnoreKillProcess(true);//可选，默认true，定位SDK内部是一个SERVICE，并放到了独立进程，设置是否在stop的时候杀死这个进程，默认不杀死
+        option.setEnableSimulateGps(false);//可选，默认false，设置是否需要过滤gps仿真结果，默认需要
+        option.setIsNeedLocationDescribe(true);//可选，默认false，设置是否需要位置语义化结果，可以在BDLocation.getLocationDescribe里得到，结果类似于“在北京天安门附近”
+        option.setIsNeedLocationPoiList(true);//可选，默认false，设置是否需要POI结果，可以在BDLocation.getPoiList里得到
+        mLocationClient.setLocOption(option);
+        mLocationClient.registerLocationListener(mMyLocationListener);
+        mLocationClient.start();
+    }
     private class MyLocationListener implements BDLocationListener{
         @Override
         public void onReceiveLocation(BDLocation bdLocation) {
@@ -216,12 +219,7 @@ public class Choose_Area extends Activity {
 
         }
     }
-    @Override
-    protected void onDestroy(){
-        super.onDestroy();
-        mLocationClient.unRegisterLocationListener(mMyLocationListener);
-        mLocationClient.stop();
-    }
+
     /**
      * 获取全国所有的生，有限从数据库查询，如果没有数据库再去服务器上查询
      */
@@ -327,6 +325,9 @@ public class Choose_Area extends Activity {
                             }
                         }
                     });
+                }else {
+                    Toast.makeText(Choose_Area.this,"数据加载失败，将自动定位到当前城市",Toast.LENGTH_SHORT).show();
+                    initLocation();
                 }
             }
 
@@ -336,7 +337,8 @@ public class Choose_Area extends Activity {
                     @Override
                     public void run() {
                         closeProgressDialog();
-                        Toast.makeText(Choose_Area.this,"加载失败",Toast.LENGTH_SHORT).show();
+                        Toast.makeText(Choose_Area.this,"数据加载失败，将自动定位到当前城市",Toast.LENGTH_SHORT).show();
+                        initLocation();
                     }
                 });
             }
@@ -349,6 +351,7 @@ public class Choose_Area extends Activity {
     private void showProgessDialog() {
         if(progressDialog == null){
             progressDialog = new ProgressDialog(this);
+            progressDialog.setCancelable(false);
             progressDialog.setMessage("正在加载...");
             progressDialog.setCanceledOnTouchOutside(false);
         }
