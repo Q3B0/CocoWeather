@@ -1,11 +1,14 @@
 package com.example.jaylen.cocoweather.activity;
 
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
 import android.widget.Button;
@@ -17,6 +20,10 @@ import com.example.jaylen.cocoweather.service.AutoUpdateService;
 import com.example.jaylen.cocoweather.utils.HttpCallbackListener;
 import com.example.jaylen.cocoweather.utils.HttpUtil;
 import com.example.jaylen.cocoweather.utils.Utility;
+
+import org.json.JSONObject;
+
+import java.util.HashMap;
 
 public class WeatherActivity extends Activity {
     private LinearLayout weatherLayout;
@@ -60,6 +67,7 @@ public class WeatherActivity extends Activity {
      * Updata Weather Info
      */
     private  Button refreshWeather;
+    private ProgressDialog progressDialog;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -109,6 +117,61 @@ public class WeatherActivity extends Activity {
         });
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu){
+        getMenuInflater().inflate(R.menu.main,menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item){
+        switch (item.getItemId()){
+            case R.id.check_update:
+                showProgessDialog();
+                checkUpdate();
+                break;
+            case  R.id.about:
+                Intent intent = new Intent(WeatherActivity.this,AboutActivity.class);
+                startActivity(intent);
+                break;
+            default:
+        }
+        return true;
+    }
+
+    /**
+     * 检查更新
+     */
+    private void checkUpdate(){
+        String address = "http://api.fir.im/apps/latest/"+R.string.AppID+"?api_token="+R.string.ApiTooken;
+        final HashMap hashMap = new HashMap();
+        HttpUtil.sendHttpRequest(address, new HttpCallbackListener() {
+            @Override
+            public void onFinish(String response) {
+                try{
+                    JSONObject appInfo = new JSONObject(response);
+                    hashMap.put("name",appInfo.getString("name"));
+                    hashMap.put("version",appInfo.getString("version"));
+                    hashMap.put("changelog",appInfo.getString("changelog"));
+                    hashMap.put("versionShort",appInfo.getString("versionShort"));
+                    hashMap.put("build",appInfo.getString("build"));
+                    hashMap.put("installUrl",appInfo.getString("installUrl"));
+                    hashMap.put("install_url",appInfo.getString("install_url"));
+                    hashMap.put("update_url",appInfo.getString("update_url"));
+                    hashMap.put("fsize", appInfo.getJSONObject("binary").getString("fsize"));
+                }catch (Exception e){
+                    e.printStackTrace();
+                }
+
+            }
+
+            @Override
+            public void onError(Exception e) {
+
+            }
+        },"fir.im");
+        closeProgressDialog();
+    }
     /**
      * 查询天气代号所对应的天气。
      */
@@ -173,6 +236,24 @@ public class WeatherActivity extends Activity {
         cityNameText.setVisibility(View.VISIBLE);
         Intent intent = new Intent(this, AutoUpdateService.class);
         startService(intent);
+    }
+    /**
+     * 显示进度对话框
+     */
+    private void showProgessDialog() {
+        if(progressDialog == null){
+            progressDialog = new ProgressDialog(this);
+            progressDialog.setCancelable(false);
+            progressDialog.setMessage("正在检查更新，请稍后...");
+            progressDialog.setCanceledOnTouchOutside(false);
+        }
+        progressDialog.show();
+    }
+
+    private void closeProgressDialog() {
+        if(progressDialog != null){
+            progressDialog.dismiss();
+        }
     }
 
     }
