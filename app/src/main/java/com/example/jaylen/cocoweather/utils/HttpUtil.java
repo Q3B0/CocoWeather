@@ -22,7 +22,7 @@ public class HttpUtil {
                     connection.setRequestMethod("GET");
                     connection.setConnectTimeout(8000);
                     connection.setReadTimeout(8000);
-                    if(type!="position"){
+                    if(type!="position" && type != "fir.im"){
                         connection.setRequestProperty("apikey","c17bd454d300638604949ec2332e1897");
                     }
                     InputStream in = connection.getInputStream();

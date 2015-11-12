@@ -1,19 +1,31 @@
 package com.example.jaylen.cocoweather.activity;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.app.Dialog;
 import android.app.ProgressDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.net.Uri;
+import android.os.Environment;
+import android.os.Handler;
+import android.os.Message;
 import android.preference.PreferenceManager;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
 import android.widget.Button;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.jaylen.cocoweather.R;
 import com.example.jaylen.cocoweather.service.AutoUpdateService;
@@ -23,6 +35,13 @@ import com.example.jaylen.cocoweather.utils.Utility;
 
 import org.json.JSONObject;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.HashMap;
 
 public class WeatherActivity extends Activity {
@@ -67,7 +86,27 @@ public class WeatherActivity extends Activity {
      * Updata Weather Info
      */
     private  Button refreshWeather;
-    private ProgressDialog progressDialog;
+    private ProgressDialog progressDialog = null;
+    /* 更新进度条 */
+    private ProgressBar mProgress;
+    private Dialog mDownloadDialog;
+    /* 下载中 */
+    private static final int DOWNLOAD = 1;
+    /* 下载结束 */
+    private static final int DOWNLOAD_FINISH = 2;
+    /* 保存解析的XML信息 */
+    HashMap<String, String> mHashMap;
+    /* 下载保存路径 */
+    private String mSavePath;
+    /* 记录进度条数量 */
+    private int progress;
+    /* 是否取消更新 */
+    private boolean cancelUpdate = false;
+
+    /*下载地址*/
+    private String downloadURL = "";
+
+    private HashMap hashMap;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -120,6 +159,7 @@ public class WeatherActivity extends Activity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu){
         getMenuInflater().inflate(R.menu.main,menu);
+        
         return true;
     }
 
@@ -143,8 +183,8 @@ public class WeatherActivity extends Activity {
      * 检查更新
      */
     private void checkUpdate(){
-        String address = "http://api.fir.im/apps/latest/"+R.string.AppID+"?api_token="+R.string.ApiTooken;
-        final HashMap hashMap = new HashMap();
+        String address = "http://api.fir.im/apps/latest/"+getResources().getString(R.string.AppID)+"?api_token="+getResources().getString(R.string.ApiTooken);
+        hashMap = new HashMap();
         HttpUtil.sendHttpRequest(address, new HttpCallbackListener() {
             @Override
             public void onFinish(String response) {
@@ -159,6 +199,8 @@ public class WeatherActivity extends Activity {
                     hashMap.put("install_url",appInfo.getString("install_url"));
                     hashMap.put("update_url",appInfo.getString("update_url"));
                     hashMap.put("fsize", appInfo.getJSONObject("binary").getString("fsize"));
+                    int version = Integer.parseInt(hashMap.get("build").toString());
+                    checkVersion(version);
                 }catch (Exception e){
                     e.printStackTrace();
                 }
@@ -171,6 +213,28 @@ public class WeatherActivity extends Activity {
             }
         },"fir.im");
         closeProgressDialog();
+    }
+
+    /**
+     * 检查程序版本号
+     * @param build 最新版本号
+     * @return
+     */
+    private void checkVersion(int build){
+        try{
+            //获取当前程序版本号
+            PackageManager packageManager = getApplicationContext().getPackageManager();
+            PackageInfo packageInfo = packageManager.getPackageInfo(getApplicationContext().getPackageName(), 0);
+            int version = packageInfo.versionCode;
+            //判定版本号，确定适当否有版本更新
+            if(build > version){
+                showNoticeDialog();
+            }else {
+                Toast.makeText(WeatherActivity.this,"当前已经是最新版本，无需更新",Toast.LENGTH_SHORT).show();
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+        }
     }
     /**
      * 查询天气代号所对应的天气。
@@ -237,6 +301,26 @@ public class WeatherActivity extends Activity {
         Intent intent = new Intent(this, AutoUpdateService.class);
         startService(intent);
     }
+    private Handler mHandler = new Handler()
+    {
+        public void handleMessage(Message msg)
+        {
+            switch (msg.what)
+            {
+                // 正在下载
+                case DOWNLOAD:
+                    // 设置进度条位置
+                    mProgress.setProgress(progress);
+                    break;
+                case DOWNLOAD_FINISH:
+                    // 安装文件
+                    installApk();
+                    break;
+                default:
+                    break;
+            }
+        };
+    };
     /**
      * 显示进度对话框
      */
@@ -256,4 +340,146 @@ public class WeatherActivity extends Activity {
         }
     }
 
+    /**
+     * 显示软件更新对话框
+     */
+    private void showNoticeDialog()
+    {
+        // 构造对话框
+        AlertDialog.Builder builder = new AlertDialog.Builder(WeatherActivity.this);
+        builder.setTitle("版本更新");
+        builder.setMessage("发现新版本，是否更新？");
+        // 更新
+        builder.setPositiveButton("立即更新", new DialogInterface.OnClickListener()
+        {
+            @Override
+            public void onClick(DialogInterface dialog, int which)
+            {
+                dialog.dismiss();
+                // 显示下载对话框
+                showDownloadDialog();
+            }
+        });
+        // 稍后更新
+        builder.setNegativeButton("稍后更新", new DialogInterface.OnClickListener()
+        {
+            @Override
+            public void onClick(DialogInterface dialog, int which)
+            {
+                dialog.dismiss();
+            }
+        });
+        Dialog noticeDialog = builder.create();
+        noticeDialog.show();
     }
+
+    private void showDownloadDialog() {
+        // 构造软件下载对话框
+        AlertDialog.Builder builder = new AlertDialog.Builder(WeatherActivity.this);
+        builder.setTitle("正在下载...");
+        // 给下载对话框增加进度条
+        final LayoutInflater inflater = LayoutInflater.from(WeatherActivity.this);
+        View v = inflater.inflate(R.layout.softupdate_progress, null);
+        mProgress = (ProgressBar) v.findViewById(R.id.update_progress);
+        builder.setView(v);
+        // 取消更新
+        builder.setNegativeButton("取消更新", new DialogInterface.OnClickListener()
+        {
+            @Override
+            public void onClick(DialogInterface dialog, int which)
+            {
+                dialog.dismiss();
+                // 设置取消状态
+                cancelUpdate = true;
+            }
+        });
+        mDownloadDialog = builder.create();
+        mDownloadDialog.show();
+        // 现在文件
+        downloadApk();
+    }
+
+    /**
+     * 下载APK文件
+     */
+    private void downloadApk() {
+        // 启动新线程下载软件
+        new downloadApkThread().start();
+    }
+
+    /**
+     * 下载文件线程
+     */
+    private class downloadApkThread extends Thread{
+        @Override
+        public void run(){
+            try{
+                //判断SD卡是否存在，并且是否具有读写权限
+                if(Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)){
+                    //获得储存卡的路径
+                    String sdpath = Environment.getExternalStorageDirectory() + "/";
+                    mSavePath = sdpath + "download";
+                    URL url = new URL(hashMap.get("install_url").toString());
+                    //创建链接
+                    HttpURLConnection conn = (HttpURLConnection)url.openConnection();
+                    conn.connect();
+                    //获取文件大小
+                    int length = conn.getContentLength();
+                    //创建输入流
+                    InputStream is = conn.getInputStream();
+
+                    File file = new File(mSavePath);
+                    //判断文件目录是否存在
+                    if(!file.exists()){
+                        file.mkdir();
+                    }
+                    File apkFile = new File(mSavePath,hashMap.get("name").toString());
+                    FileOutputStream fos = new FileOutputStream(apkFile);
+                    int count = 0;
+                    //缓存
+                    byte buf[] = new byte[1024];
+                    //写入到文件中
+                    do{
+                        int numread = is.read(buf);
+                        count += numread;
+                        //计算出进度条的位置
+                        progress = (int)(((float)count / length)*100);
+                        //更新进度条
+                        mHandler.sendEmptyMessage(DOWNLOAD);
+                        if(numread <= 0){
+                            //下载完成
+                            mHandler.sendEmptyMessage(DOWNLOAD_FINISH);
+                            break;
+                        }
+                        //写入文件
+                        fos.write(buf,0,numread);
+                    }while (!cancelUpdate);//点击取消就停止下载
+                    fos.close();
+                    is.close();
+                }
+            }catch (MalformedURLException e)
+            {
+                e.printStackTrace();
+            } catch (IOException e)
+            {
+                e.printStackTrace();
+            }
+            //取消下载对话框显示
+            mDownloadDialog.dismiss();
+        }
+    }
+
+    /**
+     * 安装APK
+     */
+    private void installApk(){
+        File apkfile = new File(mSavePath,hashMap.get("name").toString());
+        if(!apkfile.exists()){
+            return;
+        }
+        //通过Intent安装APK文件
+        Intent intent = new Intent(Intent.ACTION_VIEW);
+        intent.setDataAndType(Uri.parse("file://" + apkfile.toString()),"application/vnd.android.package-archive");
+        startActivity(intent);
+    }
+}
