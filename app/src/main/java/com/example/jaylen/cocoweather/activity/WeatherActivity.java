@@ -22,6 +22,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -34,6 +35,7 @@ import com.example.jaylen.cocoweather.utils.HttpUtil;
 import com.example.jaylen.cocoweather.utils.Utility;
 
 import org.json.JSONObject;
+import org.w3c.dom.Text;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -41,6 +43,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.util.HashMap;
 
@@ -58,20 +61,55 @@ public class WeatherActivity extends Activity {
     private TextView publishText;
 
     /**
+     * 用于显示当前温度
+     */
+    private TextView currentTempText;
+
+    /**
+     * 显示当前天气图片
+     */
+    private ImageView currentWeatherImg;
+
+    /**
      * 用于显示是天气描述信息edInstanceState
      */
     private TextView weatherDespText;
 
     /**
+     * 用于显示今天天气
+     */
+    private TextView weather1DespText;
+    /**
+     * 用于显示明天天气
+     */
+    private TextView weather2DespText;
+    /**
      * Disp Temp1vedInstanceState
      */
-    private TextView temp1Text;
+    private TextView temp1HText;
+    /**
+     * Disp Temp1vedInstanceState
+     */
+    private TextView temp1LText;
+    /**
+     * Disp Temp2
+     */
+    private TextView temp2HText;
 
     /**
      * Disp Temp2
      */
-    private TextView temp2Text;
+    private TextView temp2LText;
 
+    /**
+     * 今日天气图片
+     */
+    private ImageView weather1Img;
+
+    /**
+     * 明日天气图片
+     */
+    private ImageView weather2Img;
     /**
      * Disp Current Date
      */
@@ -81,6 +119,8 @@ public class WeatherActivity extends Activity {
      * Switch City
      */
     private Button switchCity;
+
+    private TextView windDesp;
 
     /**
      * Updata Weather Info
@@ -94,6 +134,12 @@ public class WeatherActivity extends Activity {
     private static final int DOWNLOAD = 1;
     /* 下载结束 */
     private static final int DOWNLOAD_FINISH = 2;
+
+    private static final int SET_MAIN_IMG = 3;
+
+    private static final int SET_IMG1 = 4;
+
+    private static final int SET_IMG2 = 5;
     /* 保存解析的XML信息 */
     HashMap<String, String> mHashMap;
     /* 下载保存路径 */
@@ -107,6 +153,12 @@ public class WeatherActivity extends Activity {
     private String downloadURL = "";
 
     private HashMap hashMap;
+
+    /**
+     * 图片缓存路径
+     */
+    private File cache;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -114,14 +166,23 @@ public class WeatherActivity extends Activity {
         setContentView(R.layout.weather_layout);
 
         //Init Control
+        windDesp = (TextView) findViewById(R.id.wind_desp);
         weatherLayout = (LinearLayout)findViewById(R.id.weather_info_layout);
         cityNameText = (TextView)findViewById(R.id.city_name);
-        publishText = (TextView)findViewById(R.id.publish_text);
+        publishText = (TextView)findViewById(R.id.publish_time);
         weatherDespText = (TextView)findViewById(R.id.weather_desp);
-        temp1Text = (TextView)findViewById(R.id.temp1);
-        temp2Text = (TextView)findViewById(R.id.temp2);
-        currentDateText = (TextView)findViewById(R.id.weather_date);
+        currentTempText = (TextView) findViewById(R.id.current_temp);
+        currentWeatherImg = (ImageView) findViewById(R.id.weather_img);
+        //currentDateText = (TextView)findViewById(R.id.weather_date);
         switchCity = (Button)findViewById(R.id.switch_city);
+        weather1DespText = (TextView) findViewById(R.id.today_weather);
+        weather1Img = (ImageView) findViewById(R.id.weather_img1);
+        temp1HText = (TextView) findViewById(R.id.temp1H);
+        temp1LText = (TextView) findViewById(R.id.temp1L);
+        weather2DespText = (TextView) findViewById(R.id.tomorow_weather);
+        weather2Img = (ImageView) findViewById(R.id.weather_img2);
+        temp2HText = (TextView) findViewById(R.id.temp2H);
+        temp2LText = (TextView) findViewById(R.id.temp2L);
         refreshWeather = (Button)findViewById(R.id.refresh_weather);
         String countyCode = getIntent().getStringExtra("county_code");
         if(!TextUtils.isEmpty(countyCode)){
@@ -132,7 +193,12 @@ public class WeatherActivity extends Activity {
             queryWeatherInfo(countyCode);
         }else {
             //没有县级代码时直接显示本地天气
-            showWeather();
+            try{
+                showWeather();
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+
         }
         switchCity.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -228,9 +294,20 @@ public class WeatherActivity extends Activity {
             int version = packageInfo.versionCode;
             //判定版本号，确定适当否有版本更新
             if(build > version){
-                showNoticeDialog();
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        showNoticeDialog();
+                    }
+                });
             }else {
-                Toast.makeText(WeatherActivity.this,"当前已经是最新版本，无需更新",Toast.LENGTH_SHORT).show();
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(WeatherActivity.this, "当前已经是最新版本，无需更新", Toast.LENGTH_SHORT).show();
+                    }
+                });
+
             }
         }catch (Exception e){
             e.printStackTrace();
@@ -240,7 +317,7 @@ public class WeatherActivity extends Activity {
      * 查询天气代号所对应的天气。
      */
     private void queryWeatherInfo(String weatherCode) {
-        String address = "http://apis.baidu.com/apistore/weatherservice/cityname？cityid=" +
+        String address = "http://apis.baidu.com/heweather/weather/free?cityid=CN" +
                 weatherCode;
         queryFromServer(address, "weatherCode");
     }
@@ -267,7 +344,12 @@ public class WeatherActivity extends Activity {
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            showWeather();
+                            try {
+                                showWeather();
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+
                         }
                     });
                 }
@@ -287,15 +369,63 @@ public class WeatherActivity extends Activity {
     /**
      * 从SharedPreferences文件中读取存储的天气信息，并显示到界面上。
      */
-    private void showWeather() {
-        SharedPreferences prefs = PreferenceManager.
+    private void showWeather() throws Exception{
+        //创建缓存目录，系统一运行就得创建缓存目录的，
+        cache = new File(Environment.getExternalStorageDirectory(), "cache");
+        if(!cache.exists()){
+            cache.mkdir();
+        }
+        final String imgUrl = "http://files.heweather.com/cond_icon/";
+        final SharedPreferences prefs = PreferenceManager.
                 getDefaultSharedPreferences(this);
         cityNameText.setText( prefs.getString("city_name", ""));
-        temp1Text.setText(prefs.getString("temp1", ""));
-        temp2Text.setText(prefs.getString("temp2", ""));
+        currentTempText.setText(prefs.getString("current_temp", ""));
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                String img1Url = imgUrl + prefs.getString("weather_img_code","999.png");
+                try{
+                   currentWeatherImg.setImageURI(getImageURI(img1Url, cache));
+                }catch (Exception e){
+                    e.printStackTrace();
+                }
+
+            }
+        }).start();
         weatherDespText.setText(prefs.getString("weather_desp", ""));
-        publishText.setText("今天" + prefs.getString("publish_time", "") + "发布");
-        currentDateText.setText(prefs.getString("current_date", ""));
+        publishText.setText(prefs.getString("publish_time", "") + "发布");
+        windDesp.setText(prefs.getString("wind_status",""));
+        weather1DespText.setText(prefs.getString("weather_desp_day1",""));
+        temp1HText.setText(prefs.getString("temp_max1",""));
+        temp1LText.setText(prefs.getString("temp_min1", ""));
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                String img2Url = imgUrl + prefs.getString("weather_img_day1","999.png");
+                try{
+                    weather1Img.setImageURI(getImageURI(img2Url,cache));
+                }catch (Exception e){
+                    e.printStackTrace();
+                }
+
+            }
+        }).start();
+        weather2DespText.setText(prefs.getString("weather_desp_day2", ""));
+        temp2HText.setText(prefs.getString("temp_max2",""));
+        temp2LText.setText(prefs.getString("temp_min2", ""));
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                String img3Url = imgUrl + prefs.getString("weather_img_day2","999.png");
+                try{
+                    weather2Img.setImageURI(getImageURI(img3Url, cache));
+                }catch (Exception e){
+                    e.printStackTrace();
+                }
+
+            }
+        }).start();
         weatherLayout.setVisibility(View.VISIBLE);
         cityNameText.setVisibility(View.VISIBLE);
         Intent intent = new Intent(this, AutoUpdateService.class);
@@ -350,27 +480,24 @@ public class WeatherActivity extends Activity {
         builder.setTitle("版本更新");
         builder.setMessage("发现新版本，是否更新？");
         // 更新
-        builder.setPositiveButton("立即更新", new DialogInterface.OnClickListener()
-        {
+        builder.setPositiveButton("立即更新", new DialogInterface.OnClickListener() {
             @Override
-            public void onClick(DialogInterface dialog, int which)
-            {
+            public void onClick(DialogInterface dialog, int which) {
                 dialog.dismiss();
                 // 显示下载对话框
                 showDownloadDialog();
             }
         });
         // 稍后更新
-        builder.setNegativeButton("稍后更新", new DialogInterface.OnClickListener()
-        {
+        builder.setNegativeButton("稍后更新", new DialogInterface.OnClickListener() {
             @Override
-            public void onClick(DialogInterface dialog, int which)
-            {
+            public void onClick(DialogInterface dialog, int which) {
                 dialog.dismiss();
-            }
-        });
+            }}
+        );
         Dialog noticeDialog = builder.create();
         noticeDialog.show();
+
     }
 
     private void showDownloadDialog() {
@@ -482,4 +609,35 @@ public class WeatherActivity extends Activity {
         intent.setDataAndType(Uri.parse("file://" + apkfile.toString()),"application/vnd.android.package-archive");
         startActivity(intent);
     }
+
+    public Uri getImageURI(String path,File cache) throws Exception{
+        String name = path.substring(path.lastIndexOf("/"));
+        File file = new File(cache,name);
+        //如果图片存在缓存，则不去服务器下载
+        if(file.exists()){
+            return Uri.EMPTY.fromFile(file);//得到文件的Uri
+        }else {
+            //从服务器下载图片
+            URL url = new URL(path);
+            HttpURLConnection conn = (HttpURLConnection)url.openConnection();
+            conn.setConnectTimeout(5000);
+            conn.setRequestMethod("GET");
+            conn.setDoInput(true);
+            if(conn.getResponseCode()==200){
+                InputStream is = conn.getInputStream();
+                FileOutputStream fos = new FileOutputStream(file);
+                byte[] buffer = new byte[1024];
+                int len = 0;
+                while ((len = is.read(buffer))!= -1){
+                    fos.write(buffer,0,len);
+                }
+                is.close();
+                fos.close();
+                //返回一个uri对象
+                return Uri.fromFile(file);
+            }
+        }
+        return null;
+    }
+
 }

@@ -34,7 +34,7 @@ public class AutoUpdateService extends Service {
             }
         }).start();
         AlarmManager manager = (AlarmManager)getSystemService(ALARM_SERVICE);
-        int anHour = 8 * 60 * 60 * 1000;//8小时的毫秒数
+        int anHour = 2 * 60 * 60 * 1000;//2小时的毫秒数
         long triggerAtTme = SystemClock.elapsedRealtime() + anHour;
         Intent i = new Intent(this,AutoUpdateService.class);
         PendingIntent pi = PendingIntent.getBroadcast(this,0,i,0);
@@ -48,14 +48,13 @@ public class AutoUpdateService extends Service {
     private void updateWeather() {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         String weatherCode = prefs.getString("weather_code", "");
-        String address = "http://apis.baidu.com/apistore/weatherservice/cityname？cityid=" +
+        String address = "http://apis.baidu.com/heweather/weather/free?cityid=CN" +
                 weatherCode;
         HttpUtil.sendHttpRequest(address, new HttpCallbackListener() {
            @Override
            public void onFinish(String response) {
                Utility.handleWeatherResponse(AutoUpdateService.this,response);
            }
-
            @Override
            public void onError(Exception e) {
                 e.printStackTrace();

@@ -10,6 +10,7 @@ import com.example.jaylen.cocoweather.model.CocoWeatherDB;
 import com.example.jaylen.cocoweather.model.County;
 import com.example.jaylen.cocoweather.model.Province;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.text.SimpleDateFormat;
@@ -110,20 +111,15 @@ public class Utility {
      */
     public static void handleWeatherResponse(Context context,String response){
         try {
+            SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(context).edit();
             JSONObject jsonObject = new JSONObject(response);
-            JSONObject weatherInfo = jsonObject.getJSONObject("retData");
-            String cityName = weatherInfo.getString("city");
-            String weatherCode = weatherInfo.getString("citycode");
-            String temp1 = weatherInfo.getString("l_tmp");
-            String temp2 = weatherInfo.getString("temp");
-            String weatherDesp = weatherInfo.getString("weather");
-            String publishTimme = weatherInfo.getString("time");
-            String windDirection = weatherInfo.getString("WD");
-            String windStrence = weatherInfo.getString("WS");
-            String sunRise = weatherInfo.getString("sunrise");
-            String sunSet = weatherInfo.getString("sunset");
-            saveWeatherInfo(context,cityName,weatherCode,temp1,temp2,weatherDesp,publishTimme,windDirection,windStrence,sunRise,sunRise);
-
+            JSONArray jsonArray = jsonObject.getJSONArray("HeWeather data service 3.0");
+            JSONObject basicInfo = jsonArray.getJSONObject(0).getJSONObject("basic");
+            JSONObject day1Info = jsonArray.getJSONObject(0).getJSONArray("daily_forecast").getJSONObject(0);
+            JSONObject day2Info = jsonArray.getJSONObject(0).getJSONArray("daily_forecast").getJSONObject(1);
+            JSONObject nowInfo= jsonArray.getJSONObject(0).getJSONObject("now");
+            JSONObject suggestionInfo = jsonArray.getJSONObject(0).getJSONObject("suggestion");
+            saveWeatherInfo(context,basicInfo,nowInfo,day1Info,day2Info);
         }catch (Exception e){
             e.printStackTrace();
         }
@@ -131,29 +127,34 @@ public class Utility {
 
     /**
      * 将服务器返回的信息储存到SharedPreferences文件中
-     * @param context
-     * @param cityName
-     * @param weatherCode
-     * @param temp1
-     * @param temp2
-     * @param weatherDesp
-     * @param publishTimme
      */
-    private static void saveWeatherInfo(Context context, String cityName, String weatherCode, String temp1, String temp2, String weatherDesp, String publishTimme,String windDirection,String windStrence,String sunRise,String sunSet) {
+    private static void saveWeatherInfo(Context context, JSONObject basicInfo,JSONObject nowInfo,JSONObject day1Info,JSONObject day2Info) {
         SimpleDateFormat sdf = new SimpleDateFormat("yyy年M月d日", Locale.CHINA);
         SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(context).edit();
-        editor.putBoolean("city_selected",true);
-        editor.putString("city_name", cityName);
-        editor.putString("weather_code", weatherCode);
-        editor.putString("temp1", temp1);
-        editor.putString("temp2", temp2);
-        editor.putString("weather_desp", weatherDesp);
-        editor.putString("publish_time", publishTimme);
-        editor.putString("current_date",sdf.format(new Date()));
-        editor.putString("wind_direction",windDirection);
-        editor.putString("wind_strence",windStrence);
-        editor.putString("sun_rise",sunRise);
-        editor.putString("sun_set",sunSet);
+        try {
+            editor.putBoolean("city_selected", true);
+            editor.putString("city_name", basicInfo.getString("city"));
+            editor.putString("weather_code", basicInfo.getString("id").substring(2));
+            editor.putString("publish_time", basicInfo.getJSONObject("update").getString("loc"));
+            editor.putString("weather_desp", nowInfo.getJSONObject("cond").getString("txt"));
+            editor.putString("current_temp",nowInfo.getString("tmp"));
+            editor.putString("wind_status",nowInfo.getJSONObject("wind").getString("dir")+nowInfo.getJSONObject("wind").getString("sc")+"级");
+            editor.putString("weather_img_code",nowInfo.getJSONObject("cond").getString("code")+".png");
+            editor.putString("weather_desp_day1", day1Info.getJSONObject("cond").getString("txt_d"));
+            editor.putString("weather_img_day1",day1Info.getJSONObject("cond").getString("code_d")+".png");
+            editor.putString("weather_desp_day1",day1Info.getJSONObject("cond").getString("txt_n"));
+            editor.putString("weather_img_night1",day1Info.getJSONObject("cond").getString("code_n")+".png");
+            editor.putString("temp_max1",day1Info.getJSONObject("tmp").getString("max"));
+            editor.putString("temp_min1",day1Info.getJSONObject("tmp").getString("min"));
+            editor.putString("weather_desp_day2",day2Info.getJSONObject("cond").getString("txt_d"));
+            editor.putString("weather_img_day2",day2Info.getJSONObject("cond").getString("code_d")+".png");
+            editor.putString("weather_desp_day2",day2Info.getJSONObject("cond").getString("txt_n"));
+            editor.putString("weather_img_might2",day2Info.getJSONObject("cond").getString("code_n")+".png");
+            editor.putString("temp_max2",day2Info.getJSONObject("tmp").getString("max"));
+            editor.putString("temp_min2",day2Info.getJSONObject("tmp").getString("min"));
+        }catch (Exception e){
+            e.printStackTrace();
+        }
         editor.commit();
     }
 
