@@ -1,3 +1,5 @@
 <resources>
-    <string name="app_name">CoCoWeather</string>
+    <string name="app_name">可可天气</string>
+    <string name="ApiTooken">1052c8add3e1114ed7b9bb2b9d910e96</string>
+    <string name="AppID">563dbde9748aac1fcf000002</string>
 </resources>
