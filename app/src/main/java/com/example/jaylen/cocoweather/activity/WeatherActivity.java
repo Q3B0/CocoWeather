@@ -429,7 +429,7 @@ public class WeatherActivity extends Activity {
     private void showWeather() throws Exception{
 
         //创建缓存目录，系统一运行就得创建缓存目录的，
-        cache = new File(Environment.getExternalStorageDirectory(), "cache");
+        cache = new File(Environment.getExternalStorageDirectory() + "/", "cache");
         if(!cache.exists()){
             cache.mkdir();
         }
@@ -448,6 +448,7 @@ public class WeatherActivity extends Activity {
                    msg.obj = getImageURI(img1Url, cache);
                     mHandler.sendMessage(msg);
                 }catch (Exception e){
+                    Toast.makeText(WeatherActivity.this,"当前存储卡不可用",Toast.LENGTH_SHORT).show();
                     e.printStackTrace();
                 }
 
@@ -470,6 +471,7 @@ public class WeatherActivity extends Activity {
                     msg.obj = getImageURI(img2Url,cache);
                     mHandler.sendMessage(msg);
                 }catch (Exception e){
+                    Toast.makeText(WeatherActivity.this,"当前存储卡不可用",Toast.LENGTH_SHORT).show();
                     e.printStackTrace();
                 }
 
@@ -488,6 +490,7 @@ public class WeatherActivity extends Activity {
                     msg.obj = getImageURI(img3Url, cache);
                     mHandler.sendMessage(msg);
                 }catch (Exception e){
+                    Toast.makeText(WeatherActivity.this,"当前存储卡不可用",Toast.LENGTH_SHORT).show();
                     e.printStackTrace();
                 }
 
@@ -679,6 +682,7 @@ public class WeatherActivity extends Activity {
                 e.printStackTrace();
             } catch (IOException e)
             {
+                Toast.makeText(WeatherActivity.this,"当前存储卡不可用",Toast.LENGTH_SHORT).show();
                 e.printStackTrace();
             }
             //取消下载对话框显示
@@ -701,32 +705,34 @@ public class WeatherActivity extends Activity {
     }
 
     public Uri getImageURI(String path,File cache) throws Exception{
-        String name = path.substring(path.lastIndexOf("/"));
-        File file = new File(cache,name);
-        //如果图片存在缓存，则不去服务器下载
-        if(file.exists()){
-            return Uri.EMPTY.fromFile(file);//得到文件的Uri
-        }else {
-            //从服务器下载图片
-            URL url = new URL(path);
-            HttpURLConnection conn = (HttpURLConnection)url.openConnection();
-            conn.setConnectTimeout(5000);
-            conn.setRequestMethod("GET");
-            conn.setDoInput(true);
-            if(conn.getResponseCode()==200){
-                InputStream is = conn.getInputStream();
-                FileOutputStream fos = new FileOutputStream(file);
-                byte[] buffer = new byte[1024];
-                int len = 0;
-                while ((len = is.read(buffer))!= -1){
-                    fos.write(buffer,0,len);
+        if(Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)){
+            String name = path.substring(path.lastIndexOf("/")+1);
+            File file = new File(cache,name);
+            //如果图片存在缓存，则不去服务器下载
+            if(file.exists()){
+                return Uri.EMPTY.fromFile(file);//得到文件的Uri
+            }else {
+                //从服务器下载图片
+                URL url = new URL(path);
+                HttpURLConnection conn = (HttpURLConnection)url.openConnection();
+                conn.setConnectTimeout(5000);
+                conn.setRequestMethod("GET");
+                conn.setDoInput(true);
+                if(conn.getResponseCode()==200){
+                    InputStream is = conn.getInputStream();
+                    FileOutputStream fos = new FileOutputStream(file);
+                    byte[] buffer = new byte[1024];
+                    int len = 0;
+                    while ((len = is.read(buffer))!= -1){
+                        fos.write(buffer,0,len);
+                    }
+                    is.close();
+                    fos.close();
+                    //返回一个uri对象
+                    return Uri.fromFile(file);
                 }
-                is.close();
-                fos.close();
-                //返回一个uri对象
-                return Uri.fromFile(file);
             }
-        }
+       }
         return null;
     }
 
