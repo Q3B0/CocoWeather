@@ -51,6 +51,48 @@ public class WeatherActivity extends Activity {
     private LinearLayout weatherLayout;
 
     /**
+     * 生活指数
+     */
+    private TextView confBrfText;
+    private TextView confText;
+
+    /**
+     * 洗车指数
+     */
+    private TextView cwBrfText;
+    private  TextView cwText;
+
+    /**
+     * 穿衣指数
+     */
+    private TextView drsgBrfText;
+    private TextView drsgText;
+
+    /**
+     * 感冒指数
+     */
+    private TextView fluBrfText;
+    private TextView fluText;
+
+    /**
+     * 运动指数
+     */
+    private TextView sportBrfText;
+    private TextView sportText;
+
+    /**
+     * 旅游指数
+     */
+    private TextView travBrfText;
+    private TextView travText;
+
+    /**
+     * 紫外线指数
+     */
+    private TextView uvBrfText;
+    private TextView uvText;
+
+    /**
      * 由于显示城市名
      */
     private TextView cityNameText;
@@ -184,6 +226,21 @@ public class WeatherActivity extends Activity {
         temp2HText = (TextView) findViewById(R.id.temp2H);
         temp2LText = (TextView) findViewById(R.id.temp2L);
         refreshWeather = (Button)findViewById(R.id.refresh_weather);
+        confBrfText = (TextView)findViewById(R.id.comf_brf_text);
+        confText = (TextView)findViewById(R.id.comf_text);
+        cwBrfText = (TextView)findViewById(R.id.cw_brf_text);
+        cwText = (TextView)findViewById(R.id.cw_text);
+        confText = (TextView)findViewById(R.id.comf_text);
+        drsgBrfText = (TextView)findViewById(R.id.drsg_brf_text);
+        drsgText = (TextView) findViewById(R.id.drsg_text);
+        fluBrfText = (TextView)findViewById(R.id.flu_brf);
+        fluText = (TextView)findViewById(R.id.flu_text);
+        sportBrfText = (TextView)findViewById(R.id.sport_brf_text);
+        sportText = (TextView)findViewById(R.id.sport_text);
+        travBrfText = (TextView) findViewById(R.id.trav_brf_text);
+        travText = (TextView)findViewById(R.id.trav_text);
+        uvBrfText = (TextView)findViewById(R.id.uv_brf);
+        uvText =(TextView)findViewById(R.id.uv_text);
         String countyCode = getIntent().getStringExtra("county_code");
         if(!TextUtils.isEmpty(countyCode)){
             //有县级代号是就去查询天气
@@ -370,6 +427,7 @@ public class WeatherActivity extends Activity {
      * 从SharedPreferences文件中读取存储的天气信息，并显示到界面上。
      */
     private void showWeather() throws Exception{
+
         //创建缓存目录，系统一运行就得创建缓存目录的，
         cache = new File(Environment.getExternalStorageDirectory(), "cache");
         if(!cache.exists()){
@@ -378,33 +436,39 @@ public class WeatherActivity extends Activity {
         final String imgUrl = "http://files.heweather.com/cond_icon/";
         final SharedPreferences prefs = PreferenceManager.
                 getDefaultSharedPreferences(this);
-        cityNameText.setText( prefs.getString("city_name", ""));
-        currentTempText.setText(prefs.getString("current_temp", ""));
+        cityNameText.setText( prefs.getString("city_name", "NILL"));
+        currentTempText.setText(prefs.getString("current_temp", "NILL"));
         new Thread(new Runnable() {
             @Override
             public void run() {
+                Message msg = new Message();
+                msg.what = SET_MAIN_IMG;
                 String img1Url = imgUrl + prefs.getString("weather_img_code","999.png");
                 try{
-                   currentWeatherImg.setImageURI(getImageURI(img1Url, cache));
+                   msg.obj = getImageURI(img1Url, cache);
+                    mHandler.sendMessage(msg);
                 }catch (Exception e){
                     e.printStackTrace();
                 }
 
             }
         }).start();
-        weatherDespText.setText(prefs.getString("weather_desp", ""));
+        weatherDespText.setText(prefs.getString("weather_desp", "NULL"));
         publishText.setText(prefs.getString("publish_time", "") + "发布");
-        windDesp.setText(prefs.getString("wind_status",""));
-        weather1DespText.setText(prefs.getString("weather_desp_day1",""));
+        windDesp.setText(prefs.getString("wind_status","NULL"));
+        weather1DespText.setText(prefs.getString("weather_desp_day1","NULL"));
         temp1HText.setText(prefs.getString("temp_max1",""));
         temp1LText.setText(prefs.getString("temp_min1", ""));
 
         new Thread(new Runnable() {
             @Override
             public void run() {
+                Message msg = new Message();
+                msg.what = SET_IMG1;
                 String img2Url = imgUrl + prefs.getString("weather_img_day1","999.png");
                 try{
-                    weather1Img.setImageURI(getImageURI(img2Url,cache));
+                    msg.obj = getImageURI(img2Url,cache);
+                    mHandler.sendMessage(msg);
                 }catch (Exception e){
                     e.printStackTrace();
                 }
@@ -417,15 +481,32 @@ public class WeatherActivity extends Activity {
         new Thread(new Runnable() {
             @Override
             public void run() {
+                Message msg = new Message();
+                msg.what = SET_IMG2;
                 String img3Url = imgUrl + prefs.getString("weather_img_day2","999.png");
                 try{
-                    weather2Img.setImageURI(getImageURI(img3Url, cache));
+                    msg.obj = getImageURI(img3Url, cache);
+                    mHandler.sendMessage(msg);
                 }catch (Exception e){
                     e.printStackTrace();
                 }
 
             }
         }).start();
+        confBrfText.setText(prefs.getString("comf_brf","NULL"));
+        confText.setText(prefs.getString("comf_txt","NULL"));
+        cwBrfText.setText(prefs.getString("cw_brf","NULL"));
+        cwText.setText(prefs.getString("cw_txt","NULL"));
+        drsgBrfText.setText(prefs.getString("drsg_brf","NULL"));
+        drsgText.setText(prefs.getString("drsg_txt","NULL"));
+        fluBrfText.setText(prefs.getString("flu_brf","NULL"));
+        fluText.setText(prefs.getString("flu_txt","NULL"));
+        sportBrfText.setText(prefs.getString("sport_brf","NULL"));
+        sportText.setText(prefs.getString("sport_txt","NULL"));
+        travText.setText(prefs.getString("trav_txt","NULL"));
+        travBrfText.setText(prefs.getString("trav_brf","NULL"));
+        uvBrfText.setText(prefs.getString("uv_brf","NULL"));
+        uvText.setText(prefs.getString("uv_txt", "NULL"));
         weatherLayout.setVisibility(View.VISIBLE);
         cityNameText.setVisibility(View.VISIBLE);
         Intent intent = new Intent(this, AutoUpdateService.class);
@@ -445,6 +526,15 @@ public class WeatherActivity extends Activity {
                 case DOWNLOAD_FINISH:
                     // 安装文件
                     installApk();
+                    break;
+                case SET_MAIN_IMG:
+                    currentWeatherImg.setImageURI(Uri.parse(msg.obj.toString()));
+                    break;
+                case SET_IMG1:
+                    weather1Img.setImageURI(Uri.parse(msg.obj.toString()));
+                    break;
+                case SET_IMG2:
+                    weather2Img.setImageURI(Uri.parse(msg.obj.toString()));
                     break;
                 default:
                     break;

@@ -119,7 +119,7 @@ public class Utility {
             JSONObject day2Info = jsonArray.getJSONObject(0).getJSONArray("daily_forecast").getJSONObject(1);
             JSONObject nowInfo= jsonArray.getJSONObject(0).getJSONObject("now");
             JSONObject suggestionInfo = jsonArray.getJSONObject(0).getJSONObject("suggestion");
-            saveWeatherInfo(context,basicInfo,nowInfo,day1Info,day2Info);
+            saveWeatherInfo(context,basicInfo,nowInfo,day1Info,day2Info,suggestionInfo);
         }catch (Exception e){
             e.printStackTrace();
         }
@@ -128,7 +128,7 @@ public class Utility {
     /**
      * 将服务器返回的信息储存到SharedPreferences文件中
      */
-    private static void saveWeatherInfo(Context context, JSONObject basicInfo,JSONObject nowInfo,JSONObject day1Info,JSONObject day2Info) {
+    private static void saveWeatherInfo(Context context, JSONObject basicInfo,JSONObject nowInfo,JSONObject day1Info,JSONObject day2Info,JSONObject suggestionInfo) {
         SimpleDateFormat sdf = new SimpleDateFormat("yyy年M月d日", Locale.CHINA);
         SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(context).edit();
         try {
@@ -152,6 +152,20 @@ public class Utility {
             editor.putString("weather_img_might2",day2Info.getJSONObject("cond").getString("code_n")+".png");
             editor.putString("temp_max2",day2Info.getJSONObject("tmp").getString("max"));
             editor.putString("temp_min2",day2Info.getJSONObject("tmp").getString("min"));
+            editor.putString("comf_brf",suggestionInfo.getJSONObject("comf").getString("brf"));
+            editor.putString("comf_txt",suggestionInfo.getJSONObject("comf").getString("txt"));
+            editor.putString("cw_brf",suggestionInfo.getJSONObject("cw").getString("brf"));
+            editor.putString("cw_txt",suggestionInfo.getJSONObject("cw").getString("txt"));
+            editor.putString("drsg_brf",suggestionInfo.getJSONObject("drsg").getString("brf"));
+            editor.putString("drsg_txt",suggestionInfo.getJSONObject("drsg").getString("txt"));
+            editor.putString("flu_brf",suggestionInfo.getJSONObject("flu").getString("brf"));
+            editor.putString("flu_txt",suggestionInfo.getJSONObject("flu").getString("txt"));
+            editor.putString("sport_brf",suggestionInfo.getJSONObject("sport").getString("brf"));
+            editor.putString("sport_txt",suggestionInfo.getJSONObject("sport").getString("txt"));
+            editor.putString("trav_brf",suggestionInfo.getJSONObject("trav").getString("brf"));
+            editor.putString("trav_txt",suggestionInfo.getJSONObject("trav").getString("txt"));
+            editor.putString("uv_brf",suggestionInfo.getJSONObject("uv").getString("brf"));
+            editor.putString("uv_txt",suggestionInfo.getJSONObject("uv").getString("txt"));
         }catch (Exception e){
             e.printStackTrace();
         }
